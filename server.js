@@ -2,75 +2,70 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (req,res)=>{
   res.send("Aira Backend Running");
 });
 
-app.post("/chat", async (req, res) => {
+app.post("/chat", async (req,res)=>{
 
-  try {
+  try{
 
-    const userMessage =
-    req.body.message;
+    const userMessage = req.body.message;
 
-    const response =
-    await axios.post(
+    const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
-        contents: [
-          {
-            parts: [
-              {
-                text:
-                `You are Aira, a caring emotional AI assistant for Manoj.\nUser: ${userMessage}`
-              }
-            ]
-          }
-        ]
-      },
-      {
-        headers: {
-          "Content-Type":
-          "application/json"
-        }
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          contents:[
+            {
+              parts:[
+                {
+                  text:`You are Aira, a caring AI assistant.\nUser: ${userMessage}`
+                }
+              ]
+            }
+          ]
+        })
       }
     );
 
-    const reply =
-    response.data.candidates?.[0]
-    ?.content?.parts?.[0]
-    ?.text || "No response";
+    const data = await response.json();
 
-    return res.json({
-      reply
+    console.log(data);
+
+    const reply =
+    data.candidates?.[0]
+    ?.content?.parts?.[0]
+    ?.text;
+
+    res.json({
+      reply: reply || "No response from Gemini"
     });
 
-  } catch (err) {
+  }catch(err){
 
-    console.log(
-      err.response?.data ||
-      err.message
-    );
+    console.log(err);
 
-    return res.json({
-      reply:
-      "Gemini server error"
+    res.json({
+      reply:"Backend crashed"
     });
 
   }
 
 });
 
-const PORT =
-process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT,()=>{
   console.log("Server running");
 });
