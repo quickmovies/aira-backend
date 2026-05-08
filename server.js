@@ -9,62 +9,63 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (req,res)=>{
   res.send("Aira Backend Running");
 });
 
-app.post("/chat", async (req, res) => {
+app.post("/chat", async (req,res)=>{
 
-  const userMessage = req.body.message;
+  try{
 
-  if (!userMessage) {
-    return res.json({
-      reply: "No message"
-    });
-  }
+    const userMessage =
+    req.body.message;
 
-  try {
-
-    const response = await axios({
-      method: "POST",
-      url:
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      data: {
-        contents: [
+    const response =
+    await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model:"gpt-4.1-mini",
+        messages:[
           {
-            role: "user",
-            parts: [
-              {
-                text:
-                `You are Aira, a caring AI assistant.\nUser: ${userMessage}`
-              }
-            ]
+            role:"system",
+            content:
+            "You are Aira, a caring emotional AI assistant for Manoj."
+          },
+          {
+            role:"user",
+            content:userMessage
           }
         ]
+      },
+      {
+        headers:{
+          "Content-Type":
+          "application/json",
+
+          Authorization:
+          `Bearer ${process.env.OPENAI_KEY}`
+        }
       }
-    });
+    );
 
     const reply =
-      response.data.candidates?.[0]
-      ?.content?.parts?.[0]
-      ?.text || "No reply";
+    response.data.choices[0]
+    .message.content;
 
-    return res.json({
+    res.json({
       reply
     });
 
-  } catch (err) {
+  }catch(err){
 
     console.log(
-      err.response?.data || err.message
+      err.response?.data ||
+      err.message
     );
 
-    return res.json({
+    res.json({
       reply:
-      "AI temporarily unavailable"
+      "OpenAI API failed"
     });
 
   }
@@ -74,6 +75,6 @@ app.post("/chat", async (req, res) => {
 const PORT =
 process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT,()=>{
   console.log("Server running");
 });
