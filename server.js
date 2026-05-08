@@ -9,63 +9,59 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req,res)=>{
+app.get("/", (req, res) => {
   res.send("Aira Backend Running");
 });
 
-app.post("/chat", async (req,res)=>{
+app.post("/chat", async (req, res) => {
 
-  try{
+  try {
 
     const userMessage =
     req.body.message;
 
     const response =
     await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       {
-        model:"gpt-4.1-mini",
-        messages:[
+        contents: [
           {
-            role:"system",
-            content:
-            "You are Aira, a caring emotional AI assistant for Manoj."
-          },
-          {
-            role:"user",
-            content:userMessage
+            parts: [
+              {
+                text:
+                `You are Aira, a caring emotional AI assistant for Manoj.\nUser: ${userMessage}`
+              }
+            ]
           }
         ]
       },
       {
-        headers:{
+        headers: {
           "Content-Type":
-          "application/json",
-
-          Authorization:
-          `Bearer ${process.env.OPENAI_KEY}`
+          "application/json"
         }
       }
     );
 
     const reply =
-    response.data.choices[0]
-    .message.content;
+    response.data.candidates?.[0]
+    ?.content?.parts?.[0]
+    ?.text || "No response";
 
-    res.json({
+    return res.json({
       reply
     });
 
-  }catch(err){
+  } catch (err) {
 
     console.log(
       err.response?.data ||
       err.message
     );
 
-    res.json({
+    return res.json({
       reply:
-      "OpenAI API failed"
+      "Gemini server error"
     });
 
   }
@@ -75,6 +71,6 @@ app.post("/chat", async (req,res)=>{
 const PORT =
 process.env.PORT || 3000;
 
-app.listen(PORT,()=>{
+app.listen(PORT, () => {
   console.log("Server running");
 });
